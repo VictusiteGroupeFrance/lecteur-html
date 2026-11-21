@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Éditeur & Lecteur HTML</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: #1e1e1e;
+      color: #ffffff;
+    }
+
+    /* Barre d'outils supérieure */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background-color: #252526;
+      border-bottom: 1px solid #333;
+    }
+
+    .title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background-color: #1e1e1e;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .btn-download {
+      background-color: #0e639c;
+      color: white;
+    }
+
+    .btn-download:hover {
+      background-color: #1177bb;
+    }
+
+    .btn-clear {
+      background-color: #3c3c3c;
+      color: #ccc;
+    }
+
+    .btn-clear:hover {
+      background-color: #4c4c4c;
+      color: #fff;
+    }
+
+    /* Zone principale divisée en deux */
+    main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .pane-header {
+      padding: 6px 15px;
+      background-color: #2d2d2d;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #aaa;
+      border-bottom: 1px solid #333;
+    }
+
+    #code-editor {
+      flex: 1;
+      width: 100%;
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      border: none;
+      border-right: 1px solid #333;
+      padding: 15px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+    }
+
+    #preview-frame {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background-color: #ffffff;
+    }
+
+    /* Responsive pour petits écrans */
+    @media (max-width: 768px) {
+      main {
+        flex-direction: column;
+      }
+      #code-editor {
+        border-right: none;
+        border-bottom: 2px solid #333;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title">⚡ Lecteur & Éditeur HTML</div>
+    <div class="controls">
+      <input type="text" id="filename" value="ma-page.html" placeholder="Nom du fichier">
+      <button class="btn-clear" onclick="clearEditor()">Effacer</button>
+      <button class="btn-download" onclick="downloadHTML()">Télécharger (.html)</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="pane">
+      <div class="pane-header">Code HTML / CSS / JS</div>
+      <textarea id="code-editor" spellcheck="false" placeholder="Écrivez votre code HTML ici..."></textarea>
+    </div>
+    <div class="pane">
+      <div class="pane-header">Aperçu en direct</div>
+      <iframe id="preview-frame"></iframe>
+    </div>
+  </main>
+
+  <script>
+    const editor = document.getElementById('code-editor');
+    const preview = document.getElementById('preview-frame');
+    const filenameInput = document.getElementById('filename');
+
+    // Modèle de départ par défaut
+    const defaultCode = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+      background-color: #f4f4f9;
+    }
+    h1 { color: #333; }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Bonjour le monde !</h1>
+  <p>Modifiez ce code à gauche pour voir le résultat instantanément.</p>
+  <button onclick="alert('Ça fonctionne !')">Cliquez-moi</button>
+</body>
+</html>`;
+
+    // Met à jour l'aperçu en temps réel
+    function updatePreview() {
+      preview.srcdoc = editor.value;
+    }
+
+    // Télécharge le contenu sous forme de fichier .html
+    function downloadHTML() {
+      const code = editor.value;
+      let filename = filenameInput.value.trim() || 'index.html';
+      
+      if (!filename.endsWith('.html')) {
+        filename += '.html';
+      }
+
+      const blob = new Blob([code], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Vide l'éditeur
+    function clearEditor() {
+      if (confirm('Voulez-vous vraiment effacer tout le code ?')) {
+        editor.value = '';
+        updatePreview();
+      }
+    }
+
+    // Initialisation
+    editor.value = defaultCode;
+    updatePreview();
+    editor.addEventListener('input', updatePreview);
+  </script>
+
+</body>
+    </html>
+    
